@@ -16,7 +16,7 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= {
-  val akkaVersion = "2.4.17"
+  val akkaVersion = "2.5.0"
   val spec2Version = "3.8.4"
   val log4jVersion = "2.7"
   Seq(
@@ -37,10 +37,10 @@ libraryDependencies ++= {
     "com.typesafe.akka" %% "akka-stream" % akkaVersion,
     "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion,
     "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
-    "com.typesafe.akka" %% "akka-distributed-data-experimental" % akkaVersion,
-    "com.typesafe.akka" %% "akka-typed-experimental" % akkaVersion,
-    "com.typesafe.akka" %% "akka-persistence-query-experimental" % akkaVersion,
-    "com.typesafe.akka" %% "akka-typed-experimental" % akkaVersion,
+    "com.typesafe.akka" %% "akka-distributed-data" % akkaVersion,
+    "com.typesafe.akka" %% "akka-typed" % akkaVersion,
+    "com.typesafe.akka" %% "akka-persistence-query" % akkaVersion,
+    "com.typesafe.akka" %% "akka-typed" % akkaVersion,
     "org.apache.logging.log4j" % "log4j-slf4j-impl" % log4jVersion,
     "org.apache.logging.log4j" % "log4j-core" % log4jVersion,
     "org.apache.logging.log4j" % "log4j-api" % log4jVersion,
