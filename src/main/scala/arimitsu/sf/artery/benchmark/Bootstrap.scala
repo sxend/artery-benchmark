@@ -1,14 +1,18 @@
 package arimitsu.sf.artery.benchmark
 
-import java.util.concurrent.atomic.AtomicLong
+import java.util.UUID
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
+import akka.actor.ActorRef
 import akka.pattern._
+import akka.stream.ActorMaterializer
 import akka.util.Timeout
+import akka.actor.ActorSystem
+import akka.http.scaladsl._
+import akka.http.scaladsl.server.Directives._
 import com.typesafe.config.ConfigFactory
 
 import scala.collection.JavaConversions._
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 import scala.concurrent.duration._
 
 object Bootstrap {
@@ -24,38 +28,27 @@ object Bootstrap {
     onRole("node") {
       CounterActor.startSharding(system)
     }
-    onRole("stressor") {
-      stressing(CounterActor.startProxy(system))(system)
+    onRole("server") {
+      startServer(CounterActor.startProxy(system))
     }
   }
   private def onRole(role: String)(fn: => Unit) = if (hasRole(role)) fn
 
   private def hasRole(role: String): Boolean = roles.contains(role)
-  private val STRESS_NUM = 100000
-  private def stressing(ref: ActorRef)(system: ActorSystem): Unit = {
+  private def startServer(ref: ActorRef)(implicit system: ActorSystem): Unit = {
     import system.dispatcher
-    val checker = system.actorOf(Props(classOf[ResponseChecker]))
-    println("start stressing")
-    (1 to STRESS_NUM) foreach { _ =>
-      val msg = java.util.UUID.randomUUID().toString
-      val start = System.currentTimeMillis()
-      ref.ask(msg).mapTo[String].onComplete {
-        case Success(count) =>
-          checker ! (System.currentTimeMillis() - start)
-        case Failure(t) => system.log.error(t, t.getMessage)
-      }
-    }
-  }
-  class ResponseChecker extends Actor with ActorLogging {
-    private val count = new AtomicLong(0)
-    private val sum = new AtomicLong(0)
-    def receive = {
-      case time: Long =>
-        val _count = count.incrementAndGet()
-        val _sum = sum.addAndGet(time)
-        if (_count % 1000 == 0) {
-          log.info(s"sum: ${_sum}, count: ${_count}, avg: ${_sum.toDouble / _count.toDouble}ms")
+    implicit val materializer = ActorMaterializer()
+    val route =
+      path("") {
+        get {
+          val uuid = UUID.randomUUID().toString
+          onComplete(ref.ask(uuid)) {
+            case Success((path, count, _)) => complete(s"request: $uuid, path: $path, count: $count")
+            case Failure(t)                => failWith(t)
+            case x                         => failWith(new RuntimeException(s"unhandled response: $x"))
+          }
         }
-    }
+      }
+    Http().bindAndHandle(route, "localhost", 8080)
   }
 }

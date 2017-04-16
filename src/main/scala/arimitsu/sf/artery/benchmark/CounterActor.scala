@@ -2,19 +2,20 @@ package arimitsu.sf.artery.benchmark
 
 import java.util.concurrent.atomic.AtomicLong
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
-import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
-import akka.cluster.sharding.ShardRegion.{HashCodeMessageExtractor, MessageExtractor}
+import akka.actor.{ Actor, ActorLogging, ActorRef, ActorSystem, Props }
+import akka.cluster.sharding.{ ClusterSharding, ClusterShardingSettings }
+import akka.cluster.sharding.ShardRegion.{ HashCodeMessageExtractor, MessageExtractor }
 
 class CounterActor extends Actor with ActorLogging {
   private val counter = new AtomicLong(0)
   def receive = {
     case msg: String =>
-      sender() ! counter.getAndIncrement().toString
+      sender() ! (self.path.toString, counter.getAndIncrement().toString, CounterActor.padding)
   }
 }
 
 object CounterActor {
+  lazy val padding: String = (0 until 1000000).map(_ => "0").mkString
   val typeName: String = "counter"
   val messageExtractor: MessageExtractor = new HashCodeMessageExtractor(10) {
     override def entityId(message: Any): String = message match {
