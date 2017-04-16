@@ -19,7 +19,11 @@ libraryDependencies ++= {
   val akkaVersion = "2.5.0"
   val spec2Version = "3.8.4"
   val log4jVersion = "2.7"
+  val akkaHttpVersion = "10.0.5"
   Seq(
+    "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion,
+    "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+    "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
     "com.typesafe.akka" %% "akka-actor" % akkaVersion,
     "com.typesafe.akka" %% "akka-agent" % akkaVersion,
     "com.typesafe.akka" %% "akka-camel" % akkaVersion,
