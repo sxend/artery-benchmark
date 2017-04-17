@@ -7,6 +7,8 @@ import akka.pattern._
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import akka.actor.ActorSystem
+import akka.cluster.Cluster
+import akka.cluster.http.management.ClusterHttpManagement
 import akka.http.scaladsl._
 import akka.http.scaladsl.server.Directives._
 import com.typesafe.config.ConfigFactory
@@ -22,8 +24,10 @@ object Bootstrap {
 
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem("benchmark-system")
+    val cluster = Cluster(system)
     onRole("seed") {
       CounterActor.startProxy(system)
+      ClusterHttpManagement(cluster).start()
     }
     onRole("node") {
       CounterActor.startSharding(system)
