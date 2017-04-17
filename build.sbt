@@ -12,6 +12,7 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots"),
   Resolver.bintrayRepo("sxend", "releases"),
   Resolver.bintrayRepo("sxend", "snapshots"),
+  Resolver.bintrayRepo("akka", "maven"),
   "Akka Snapshot Repository" at "http://repo.akka.io/snapshots/"
 )
 
@@ -21,6 +22,7 @@ libraryDependencies ++= {
   val log4jVersion = "2.7"
   val akkaHttpVersion = "10.0.5"
   Seq(
+    "com.lightbend.akka" %% "akka-management-cluster-http" % "0.2",
     "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion,
     "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
     "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
