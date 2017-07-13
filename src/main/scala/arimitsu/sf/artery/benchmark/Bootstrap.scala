@@ -1,58 +1,48 @@
 package arimitsu.sf.artery.benchmark
 
-import java.util.UUID
-
-import akka.actor.ActorRef
+import akka.actor.ActorSystem
 import akka.pattern._
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
-import akka.actor.ActorSystem
 import akka.cluster.Cluster
-import akka.cluster.http.management.ClusterHttpManagement
+import akka.cluster.client.{ ClusterClient, ClusterClientReceptionist, ClusterClientSettings }
 import akka.http.scaladsl._
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import com.typesafe.config.ConfigFactory
+import org.apache.commons.lang3.RandomStringUtils
 
-import scala.collection.JavaConversions._
-import scala.util.{ Failure, Success }
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 object Bootstrap {
   private val config = ConfigFactory.load
-  private val roles = config.getStringList("akka.cluster.roles").toList
-  private implicit val timeout = Timeout(120.seconds)
+  private implicit val timeout = Timeout(3.seconds)
 
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem("benchmark-system")
-    val cluster = Cluster(system)
-    onRole("seed") {
-      CounterActor.startProxy(system)
-      ClusterHttpManagement(cluster).start()
+    onRole("cluster") {
+      val cluster = Cluster(system)
+      val echoRef = cluster.system.actorOf(EchoActor.props, EchoActor.name)
+      ClusterClientReceptionist(cluster.system).registerService(echoRef)
     }
-    onRole("node") {
-      CounterActor.startSharding(system)
-    }
-    onRole("server") {
-      startServer(CounterActor.startProxy(system))
+    onRole("http") {
+      implicit val materializer = ActorMaterializer()
+      import system.dispatcher
+      val clientRef = system.actorOf(ClusterClient.props(ClusterClientSettings(system)), "client")
+      val size = config.getInt("benchmark.http.message-size")
+      def genString = RandomStringUtils.randomAlphanumeric(size)
+      def askToEchoServer: Future[String] = {
+        clientRef.ask(ClusterClient.Send("/user/echo", genString, localAffinity = false)).mapTo[String].map(_ => "success.")
+      }
+      val route = (get & path("echo"))(complete(askToEchoServer))
+      Http().bindAndHandleAsync(
+        Route.asyncHandler(route),
+        config.getString("benchmark.http.hostname"),
+        config.getInt("benchmark.http.port"),
+        parallelism = config.getInt("benchmark.http.parallelism"))
     }
   }
   private def onRole(role: String)(fn: => Unit) = if (hasRole(role)) fn
-
-  private def hasRole(role: String): Boolean = roles.contains(role)
-  private def startServer(ref: ActorRef)(implicit system: ActorSystem): Unit = {
-    import system.dispatcher
-    implicit val materializer = ActorMaterializer()
-    val route =
-      path("") {
-        get {
-          val uuid = UUID.randomUUID().toString
-          onComplete(ref.ask(uuid)) {
-            case Success((path, count, _)) => complete(s"request: $uuid, path: $path, count: $count")
-            case Failure(t)                => failWith(t)
-            case x                         => failWith(new RuntimeException(s"unhandled response: $x"))
-          }
-        }
-      }
-    Http().bindAndHandle(route, "localhost", 8080)
-  }
+  private def hasRole(role: String): Boolean = role == config.getString("benchmark.role")
 }
