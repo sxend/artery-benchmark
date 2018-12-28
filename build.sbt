@@ -5,7 +5,7 @@ name := "artery-benchmark"
 
 version := "0.0.1-SNAPSHOT"
 
-scalaVersion := "2.12.2"
+scalaVersion := "2.12.8"
 
 resolvers ++= Seq(
   Resolver.sonatypeRepo("releases"),
@@ -15,8 +15,8 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= {
-  val akkaVersion = "2.5.3"
-  val akkaHttpVersion = "10.0.9"
+  val akkaVersion = "2.5.19"
+  val akkaHttpVersion = "10.1.6"
   Seq(
     "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion,
     "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
