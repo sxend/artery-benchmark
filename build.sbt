@@ -21,10 +21,13 @@ libraryDependencies ++= {
     "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion,
     "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
     "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
-    "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+    "com.typesafe.akka" %% "akka-actor" % akkaVersion excludeAll(
+//      ExclusionRule(organization = "io.aeron"),
+//      ExclusionRule(organization = "io.netty")
+    ),
     "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
     "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
-    "org.apache.commons" % "commons-lang3" % "3.6"
+    "org.apache.commons" % "commons-text" % "1.6"
   )
 }
 

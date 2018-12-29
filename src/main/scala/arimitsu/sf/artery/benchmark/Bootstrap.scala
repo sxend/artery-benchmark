@@ -1,16 +1,18 @@
 package arimitsu.sf.artery.benchmark
 
+import java.util.UUID
+
 import akka.actor.ActorSystem
 import akka.pattern._
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import akka.cluster.Cluster
-import akka.cluster.client.{ ClusterClient, ClusterClientReceptionist, ClusterClientSettings }
+import akka.cluster.client.{ClusterClient, ClusterClientReceptionist, ClusterClientSettings}
 import akka.http.scaladsl._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.config.ConfigFactory
-import org.apache.commons.lang3.RandomStringUtils
+import org.apache.commons.text.{CharacterPredicates, RandomStringGenerator}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -31,9 +33,9 @@ object Bootstrap {
       import system.dispatcher
       val clientRef = system.actorOf(ClusterClient.props(ClusterClientSettings(system)), "client")
       val size = config.getInt("benchmark.http.message-size")
-      def genString = RandomStringUtils.randomAlphanumeric(size)
+      def genString = UUID.randomUUID().toString
       def askToEchoServer: Future[String] = {
-        clientRef.ask(ClusterClient.Send("/user/echo", genString, localAffinity = false)).mapTo[String].map(_ => "success.")
+        clientRef.ask(ClusterClient.Send("/user/echo", genString, localAffinity = false)).mapTo[String].map(x => s"success. $x")
       }
       val route = (get & path("echo"))(complete(askToEchoServer))
       Http().bindAndHandleAsync(
